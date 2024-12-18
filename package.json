@@ -1,5 +1,5 @@
 {
-  "name": "minecraft-server-status",
+  "name": "server-status",
   "version": "1.0.0",
   "description": "Simple program to see status of my minecraft server",
   "main": "index.js",
