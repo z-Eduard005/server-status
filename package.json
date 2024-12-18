@@ -5,7 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node test.js",
     "start": "node index.js"
   },
   "author": "z-Eduard005",
@@ -13,6 +13,7 @@
   "dependencies": {
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "firebase": "^11.1.0",
     "node-telegram-bot-api": "^0.66.0"
   },
   "devDependencies": {
