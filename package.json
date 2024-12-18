@@ -1,0 +1,22 @@
+{
+  "name": "minecraft-server-status",
+  "version": "1.0.0",
+  "description": "Simple program to see status of my minecraft server",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "author": "z-Eduard005",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "node-telegram-bot-api": "^0.66.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node-telegram-bot-api": "^0.64.7"
+  }
+}
