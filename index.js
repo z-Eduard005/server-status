@@ -1,14 +1,14 @@
 import fs from "fs/promises";
-import dotenv from "dotenv";
+// import dotenv from "dotenv";
 import express from "express";
 import TGBot from "node-telegram-bot-api";
 
-dotenv.config();
+// dotenv.config({ path: ".env.local" });
 const port = process.env.PORT || 3000;
 const tgbToken = process.env.TELEGRAM_BOT_TOKEN || "";
 const chatId = Number(process.env.CHAT_ID) || 0;
 const apiPassword = process.env.API_PASSWORD || "";
-const allowedIPs = JSON.parse(process.env.ALLOWED_IPS) || [];
+const allowedIPs = JSON.parse(process.env.ALLOWED_IPS || "[]");
 const DATA_FILE_PATH = "./data.json";
 const QUERY_TIMEOUT_DURATION_SEC = 50;
 let queryTimeout = null;
