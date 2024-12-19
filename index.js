@@ -10,7 +10,7 @@ const tgbToken = process.env.TELEGRAM_BOT_TOKEN || "";
 const chatId = Number(process.env.CHAT_ID) || 0;
 const apiPassword = process.env.API_PASSWORD || "";
 const allowedIPs = JSON.parse(process.env.ALLOWED_IPS || "[]");
-const QUERY_TIMEOUT_DURATION_SEC = 20;
+const QUERY_TIMEOUT_DURATION_SEC = 50;
 let queryTimeout = null;
 const app = express();
 app.use(express.json());
