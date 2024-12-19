@@ -82,11 +82,16 @@ app.post("/set", checkPassword, async (req, res) => {
       queryTimeout = setTimeout(async () => {
         try {
           await updateServerStatus({ on: false, ipv4: "" });
+        } catch {
+          console.error("Error updating server status. Data will be outdated!");
+          await updateServerStatus({ on: false, ipv4: "" });
+        }
+        try {
           await bot.sendMessage(chatId, "<i><b>Server closed!</b></i>", {
             parse_mode: "HTML",
           });
         } catch (err) {
-          console.error("Error updating server status:", err);
+          console.error("Error sending message:", err);
         }
         resolve();
       }, QUERY_TIMEOUT_DURATION_SEC * 1000);
@@ -101,11 +106,11 @@ app.post("/set", checkPassword, async (req, res) => {
           { parse_mode: "HTML" }
         );
     } catch (err) {
-      console.error("Error reading server status:", err);
+      console.error("Error reading server status or sending message:", err);
     }
     await updateServerStatus(newStatus);
-    res.json(newStatus);
     await timeoutPromise;
+    res.json(newStatus);
   } catch (err) {
     res.status(500).json({ err: "Error updating server status" });
   }
