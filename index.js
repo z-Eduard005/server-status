@@ -104,9 +104,8 @@ app.post("/set", checkPassword, async (req, res) => {
       console.error("Error reading server status:", err);
     }
     await updateServerStatus(newStatus);
-    await timeoutPromise;
-
     res.json(newStatus);
+    await timeoutPromise;
   } catch (err) {
     res.status(500).json({ err: "Error updating server status" });
   }
