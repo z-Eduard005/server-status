@@ -15,7 +15,6 @@ let queryTimeout = null;
 const app = express();
 app.use(express.json());
 
-// firebase
 const firebaseConfig = {
   apiKey: process.env.FIREBASE_API_KEY || "",
   authDomain: process.env.FIREBASE_AUTH_DOMAIN || "",
@@ -45,12 +44,10 @@ const checkPassword = (req, res, next) => {
 
 const bot = new TGBot(tgbToken, { polling: true });
 
-bot.setMyCommands([{ command: "/test", description: "Test command" }]);
-
-bot.on("message", (msg) => {
-  if (chatId === msg.chat.id && msg.text === "/test")
-    bot.sendMessage(chatId, "I'm active now!");
-});
+// bot.on("message", (msg) => {
+//   if (chatId === msg.chat.id && msg.text === "/test")
+//     bot.sendMessage(chatId, "I'm active now!");
+// });
 
 bot.on("polling_error", (err) => {
   console.error("Polling error:", err);
@@ -84,11 +81,15 @@ app.post("/set", checkPassword, async (req, res) => {
           await updateServerStatus({ on: false, ipv4: "" });
         } catch {
           console.error("Error updating server status. Data will be outdated!");
-          await bot.sendMessage(
-            chatId,
-            "<i><b>Error: Server status - open, but the server itself is closed!</b></i>",
-            { parse_mode: "HTML" }
-          );
+          try {
+            await bot.sendMessage(
+              chatId,
+              "<i><b>Error: Server status - open, but the server itself is closed!</b></i>",
+              { parse_mode: "HTML" }
+            );
+          } catch (err) {
+            console.error("Error sending message:", err);
+          }
         }
         try {
           await bot.sendMessage(chatId, "<i><b>Server closed!</b></i>", {
@@ -118,8 +119,4 @@ app.post("/set", checkPassword, async (req, res) => {
   } catch (err) {
     res.status(500).json({ err: "Error updating server status" });
   }
-});
-
-app.listen(port, () => {
-  console.log(`Server started on port ${port}`);
 });
