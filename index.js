@@ -43,21 +43,6 @@ const checkPassword = (req, res, next) => {
   return res.status(403).json({ error: "Access denied" });
 };
 
-const resetTimeout = () => {
-  if (queryTimeout) clearTimeout(queryTimeout);
-
-  queryTimeout = setTimeout(async () => {
-    try {
-      await updateServerStatus({ on: false, ipv4: "" });
-      bot.sendMessage(chatId, "<i><b>Server closed!</b></i>", {
-        parse_mode: "HTML",
-      });
-    } catch (err) {
-      console.error("Error updating server status:", err);
-    }
-  }, QUERY_TIMEOUT_DURATION_SEC * 1000);
-};
-
 const bot = new TGBot(tgbToken, { polling: true });
 
 bot.setMyCommands([{ command: "/test", description: "Test command" }]);
@@ -91,6 +76,22 @@ app.post("/check", checkPassword, (req, res) => {
 app.post("/set", checkPassword, async (req, res) => {
   try {
     const newStatus = req.body;
+    if (queryTimeout) clearTimeout(queryTimeout);
+
+    const timeoutPromise = new Promise((resolve) => {
+      queryTimeout = setTimeout(async () => {
+        try {
+          await updateServerStatus({ on: false, ipv4: "" });
+          await bot.sendMessage(chatId, "<i><b>Server closed!</b></i>", {
+            parse_mode: "HTML",
+          });
+        } catch (err) {
+          console.error("Error updating server status:", err);
+        }
+        resolve();
+      }, QUERY_TIMEOUT_DURATION_SEC * 1000);
+    });
+
     try {
       const serverOn = (await getServerStatus()).on;
       if (!serverOn)
@@ -103,7 +104,8 @@ app.post("/set", checkPassword, async (req, res) => {
       console.error("Error reading server status:", err);
     }
     await updateServerStatus(newStatus);
-    resetTimeout();
+    await timeoutPromise;
+
     res.json(newStatus);
   } catch (err) {
     res.status(500).json({ err: "Error updating server status" });
