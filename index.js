@@ -1,3 +1,8 @@
+// "functions": {
+//   "index.js": {
+//     "maxDuration": 60
+//   }
+// }
 // import dotenv from "dotenv";
 import express from "express";
 import TGBot from "node-telegram-bot-api";
