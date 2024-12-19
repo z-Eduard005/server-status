@@ -84,7 +84,11 @@ app.post("/set", checkPassword, async (req, res) => {
           await updateServerStatus({ on: false, ipv4: "" });
         } catch {
           console.error("Error updating server status. Data will be outdated!");
-          await updateServerStatus({ on: false, ipv4: "" });
+          await bot.sendMessage(
+            chatId,
+            "<i><b>Error: Server status - open, but the server itself is closed!</b></i>",
+            { parse_mode: "HTML" }
+          );
         }
         try {
           await bot.sendMessage(chatId, "<i><b>Server closed!</b></i>", {
