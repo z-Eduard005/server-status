@@ -120,3 +120,7 @@ app.post("/set", checkPassword, async (req, res) => {
     res.status(500).json({ err: "Error updating server status" });
   }
 });
+
+app.listen(port, () => {
+  console.log(`Server started on port ${port}`);
+});
