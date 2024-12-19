@@ -12,6 +12,7 @@ const apiPassword = process.env.API_PASSWORD || "";
 const allowedIPs = JSON.parse(process.env.ALLOWED_IPS || "[]");
 const QUERY_TIMEOUT_DURATION_SEC = 45;
 let queryTimeout = null;
+let timeoutPromise = null;
 const app = express();
 app.use(express.json());
 
@@ -73,10 +74,15 @@ app.post("/check", checkPassword, (req, res) => {
 app.post("/set", checkPassword, async (req, res) => {
   try {
     const newStatus = req.body;
-    if (queryTimeout) clearTimeout(queryTimeout);
+    if (queryTimeout) {
+      clearTimeout(queryTimeout);
+      timeoutPromise = null;
+    }
 
-    const timeoutPromise = new Promise((resolve) => {
+    timeoutPromise = new Promise((resolve) => {
       queryTimeout = setTimeout(async () => {
+        if (timeoutPromise === null) return;
+
         try {
           await updateServerStatus({ on: false, ipv4: "" });
         } catch {
@@ -107,7 +113,7 @@ app.post("/set", checkPassword, async (req, res) => {
       if (!serverOn)
         bot.sendMessage(
           chatId,
-          `Join in! Server open on IP: <i><b>${newStatus.ipv4}:25565</b></i>`,
+          `<i><b>Join in! Server open on IP:</b></i> ${newStatus.ipv4}:25565`,
           { parse_mode: "HTML" }
         );
     } catch (err) {
