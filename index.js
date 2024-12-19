@@ -10,7 +10,7 @@ const tgbToken = process.env.TELEGRAM_BOT_TOKEN || "";
 const chatId = Number(process.env.CHAT_ID) || 0;
 const apiPassword = process.env.API_PASSWORD || "";
 const allowedIPs = JSON.parse(process.env.ALLOWED_IPS || "[]");
-const QUERY_TIMEOUT_DURATION_SEC = 50;
+const QUERY_TIMEOUT_DURATION_SEC = 20;
 let queryTimeout = null;
 const app = express();
 app.use(express.json());
@@ -92,7 +92,8 @@ app.post("/set", checkPassword, async (req, res) => {
   try {
     const newStatus = req.body;
     try {
-      if (!(await getServerStatus().on))
+      const serverOn = await getServerStatus().on;
+      if (!serverOn)
         bot.sendMessage(
           chatId,
           `Join in! Server open on IP: <i><b>${newStatus.ipv4}:25565</b></i>`,
