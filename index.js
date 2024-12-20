@@ -63,7 +63,9 @@ app.post("/set", checkPassword, async (req, res) => {
       ...newStatus,
       lastUpdateTime: Date.now(),
     });
-    fetch(`${URL}/clearTimeout`, { method: "POST" });
+
+    const timeoutErr = fetch(`${URL}/clearTimeout`, { method: "POST" });
+    console.log(timeoutErr);
     res.json(newStatus);
   } catch (err) {
     res.status(500).json({ err: "Error updating server status" });
@@ -71,10 +73,13 @@ app.post("/set", checkPassword, async (req, res) => {
 });
 
 app.post("/clearTimeout", async (req, res) => {
-  await setTimeoutPromis(QUERY_TIMEOUT_DURATION_MS);
   try {
+    console.log("timeout start!");
+    await setTimeoutPromis(QUERY_TIMEOUT_DURATION_MS);
+
     const lastUpdateTime = (await getServerStatusDB()).lastUpdateTime;
     if (Date.now() - lastUpdateTime >= QUERY_TIMEOUT_DURATION_MS) {
+      console.log("timeout end!");
       await updateServerStatusDB({
         on: false,
         ipv4: "",
@@ -88,6 +93,7 @@ app.post("/clearTimeout", async (req, res) => {
         console.error("Error sending message:", err);
       }
     }
+    res.json({ clearTimeout: "clearTimeout" });
   } catch {
     console.error("Error updating server status. Data will be outdated!");
     try {
@@ -99,9 +105,8 @@ app.post("/clearTimeout", async (req, res) => {
     } catch (err) {
       console.error("Error sending message:", err);
     }
+    res.status(500).json({ err: "err" });
   }
-
-  res.json(null);
 });
 
 app.listen(port, () => {
