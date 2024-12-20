@@ -10,7 +10,7 @@ const tgbToken = process.env.TELEGRAM_BOT_TOKEN || "";
 const chatId = Number(process.env.CHAT_ID) || 0;
 const apiPassword = process.env.API_PASSWORD || "";
 const allowedIPs = JSON.parse(process.env.ALLOWED_IPS || "[]");
-const QUERY_TIMEOUT_DURATION_MS = 45 * 1000;
+const QUERY_TIMEOUT_DURATION_MS = 29 * 1000;
 const URL = "https://server-status-iota.vercel.app";
 // const URL = "http://localhost:3001";
 
@@ -65,7 +65,7 @@ app.post("/set", checkPassword, async (req, res) => {
     });
 
     const timeoutErr = fetch(`${URL}/clearTimeout`, { method: "POST" });
-    console.log(timeoutErr);
+    timeoutErr.toString();
     res.json(newStatus);
   } catch (err) {
     res.status(500).json({ err: "Error updating server status" });
@@ -74,12 +74,10 @@ app.post("/set", checkPassword, async (req, res) => {
 
 app.post("/clearTimeout", async (req, res) => {
   try {
-    console.log("timeout start!");
     await setTimeoutPromis(QUERY_TIMEOUT_DURATION_MS);
 
     const lastUpdateTime = (await getServerStatusDB()).lastUpdateTime;
     if (Date.now() - lastUpdateTime >= QUERY_TIMEOUT_DURATION_MS) {
-      console.log("timeout end!");
       await updateServerStatusDB({
         on: false,
         ipv4: "",
