@@ -1,6 +1,7 @@
 import express from "express";
 import TGBot from "node-telegram-bot-api";
 import { getServerStatusDB, updateServerStatusDB } from "./firebase.js";
+import { setTimeout as setTimeoutPromis } from "timers/promises";
 // import dotenv from "dotenv";
 // dotenv.config({ path: ".env.local" });
 
@@ -9,11 +10,9 @@ const tgbToken = process.env.TELEGRAM_BOT_TOKEN || "";
 const chatId = Number(process.env.CHAT_ID) || 0;
 const apiPassword = process.env.API_PASSWORD || "";
 const allowedIPs = JSON.parse(process.env.ALLOWED_IPS || "[]");
-const QUERY_TIMEOUT_DURATION_SEC = 45;
+const QUERY_TIMEOUT_DURATION_MS = 45 * 1000;
 const URL = "https://server-status-iota.vercel.app";
 // const URL = "http://localhost:3001";
-let queryTimeout = null;
-let timeoutPromise = null;
 
 const bot = new TGBot(tgbToken, { polling: true });
 
@@ -33,8 +32,8 @@ const checkPassword = (req, res, next) => {
 
 app.get("/get", checkPassword, async (req, res) => {
   try {
-    const serverStatus = await getServerStatusDB();
-    res.json(serverStatus);
+    const { on, ipv4 } = await getServerStatusDB();
+    res.json({ on, ipv4 });
   } catch (err) {
     res.status(500).json({ err: "Error reading server status" });
   }
@@ -60,7 +59,10 @@ app.post("/set", checkPassword, async (req, res) => {
     } catch (err) {
       console.error("Error reading server status or sending message:", err);
     }
-    await updateServerStatusDB(newStatus);
+    await updateServerStatusDB({
+      ...newStatus,
+      lastUpdateTime: Date.now(),
+    });
     fetch(`${URL}/clearTimeout`, { method: "POST" });
     res.json(newStatus);
   } catch (err) {
@@ -69,29 +71,15 @@ app.post("/set", checkPassword, async (req, res) => {
 });
 
 app.post("/clearTimeout", async (req, res) => {
-  if (queryTimeout) {
-    clearTimeout(queryTimeout);
-    timeoutPromise = null;
-  }
-
-  timeoutPromise = new Promise((resolve) => {
-    queryTimeout = setTimeout(async () => {
-      if (timeoutPromise === null) return;
-
-      try {
-        await updateServerStatusDB({ on: false, ipv4: "" });
-      } catch {
-        console.error("Error updating server status. Data will be outdated!");
-        try {
-          await bot.sendMessage(
-            chatId,
-            "<i><b>Error: Server status - open, but the server itself is closed!</b></i>",
-            { parse_mode: "HTML" }
-          );
-        } catch (err) {
-          console.error("Error sending message:", err);
-        }
-      }
+  await setTimeoutPromis(QUERY_TIMEOUT_DURATION_MS);
+  try {
+    const lastUpdateTime = (await getServerStatusDB()).lastUpdateTime;
+    if (Date.now() - lastUpdateTime >= QUERY_TIMEOUT_DURATION_MS) {
+      await updateServerStatusDB({
+        on: false,
+        ipv4: "",
+        lastUpdateTime: Date.now(),
+      });
       try {
         await bot.sendMessage(chatId, "<i><b>Server closed!</b></i>", {
           parse_mode: "HTML",
@@ -99,11 +87,20 @@ app.post("/clearTimeout", async (req, res) => {
       } catch (err) {
         console.error("Error sending message:", err);
       }
-      resolve();
-    }, QUERY_TIMEOUT_DURATION_SEC * 1000);
-  });
+    }
+  } catch {
+    console.error("Error updating server status. Data will be outdated!");
+    try {
+      await bot.sendMessage(
+        chatId,
+        "<i><b>Error: Server status - open, but the server itself is closed!</b></i>",
+        { parse_mode: "HTML" }
+      );
+    } catch (err) {
+      console.error("Error sending message:", err);
+    }
+  }
 
-  await timeoutPromise;
   res.json(null);
 });
 
