@@ -11,6 +11,7 @@
   "author": "z-Eduard005",
   "license": "ISC",
   "dependencies": {
+    "@vercel/functions": "^1.5.2",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "firebase": "^11.1.0",

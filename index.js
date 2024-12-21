@@ -1,5 +1,6 @@
 import express from "express";
 import TGBot from "node-telegram-bot-api";
+import { waitUntil } from "@vercel/functions";
 import { getServerStatusDB, updateServerStatusDB } from "./firebase.js";
 // import dotenv from "dotenv";
 // dotenv.config({ path: ".env.local" });
@@ -55,10 +56,12 @@ app.post("/set", checkPassword, async (req, res) => {
       lastUpdateTime: Date.now(),
     });
 
-    fetch(`${URL}/statusoff`, {
-      method: "POST",
-      headers: { "x-api-password": apiPassword },
-    });
+    waitUntil(
+      fetch(`${URL}/statusoff`, {
+        method: "POST",
+        headers: { "x-api-password": apiPassword },
+      })
+    );
 
     res.json(newStatus);
   } catch (err) {
