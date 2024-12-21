@@ -61,7 +61,7 @@ app.post("/set", checkPassword, async (req, res) => {
         headers: { "x-api-password": apiPassword },
       }).catch(() => {});
     } catch (err) {
-      console.error(`Error sending statusoff request: ${err}`);
+      console.log(`Error sending statusoff request: ${err}`);
     }
 
     res.json(newStatus);
