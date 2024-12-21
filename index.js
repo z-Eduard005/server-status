@@ -71,13 +71,11 @@ app.post("/set", checkPassword, async (req, res) => {
 });
 
 app.post("/statusoff", async (req, res) => {
-  let timeoutPromise = null;
-  let queryTimeout = null;
   try {
-    timeoutPromise = new Promise((resolve) => {
-      queryTimeout = setTimeout(async () => {
-        const lastUpdateTime = (await getServerStatusDB()).lastUpdateTime;
-        if (Date.now() - lastUpdateTime >= QUERY_TIMEOUT_DURATION_MS) {
+    await new Promise((resolve) => {
+      setTimeout(async () => {
+        const { lastUpdateTime, on } = await getServerStatusDB();
+        if (on && Date.now() - lastUpdateTime >= QUERY_TIMEOUT_DURATION_MS) {
           await updateServerStatusDB({
             on: false,
             ipv4: "",
@@ -94,7 +92,6 @@ app.post("/statusoff", async (req, res) => {
         }
       }, QUERY_TIMEOUT_DURATION_MS);
     });
-    await timeoutPromise;
     res.json({ clearTimeout: "clearTimeout" });
   } catch {
     console.error("Error updating server status. Data will be outdated!");
