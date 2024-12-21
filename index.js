@@ -9,17 +9,9 @@ const tgbToken = process.env.TELEGRAM_BOT_TOKEN || "";
 const chatId = Number(process.env.CHAT_ID) || 0;
 const apiPassword = process.env.API_PASSWORD || "";
 const allowedIPs = JSON.parse(process.env.ALLOWED_IPS || "[]");
-const QUERY_TIMEOUT_DURATION_MS = 29 * 1000;
-const URL = "https://server-status-iota.vercel.app";
-// const URL = "http://localhost:3001";
+const URL = "https://timeout-server.vercel.app/";
 
-const bot = new TGBot(tgbToken, { polling: true });
-
-bot.on("polling_error", (err) => {
-  console.error("Polling error:", err);
-  bot.stopPolling();
-  setTimeout(() => bot.startPolling(), 5000);
-});
+const bot = new TGBot(tgbToken, { polling: false });
 
 const app = express();
 app.use(express.json());
@@ -63,48 +55,13 @@ app.post("/set", checkPassword, async (req, res) => {
       lastUpdateTime: Date.now(),
     });
 
-    fetch(`${URL}/statusoff`, { method: "POST" });
+    fetch(`${URL}/statusoff`, {
+      method: "POST",
+      headers: { "x-api-password": apiPassword },
+    });
     res.json(newStatus);
   } catch (err) {
     res.status(500).json({ err: "Error updating server status" });
-  }
-});
-
-app.post("/statusoff", async (req, res) => {
-  try {
-    await new Promise((resolve) => {
-      setTimeout(async () => {
-        const { lastUpdateTime, on } = await getServerStatusDB();
-        if (on && Date.now() - lastUpdateTime >= QUERY_TIMEOUT_DURATION_MS) {
-          await updateServerStatusDB({
-            on: false,
-            ipv4: "",
-            lastUpdateTime: Date.now(),
-          });
-          try {
-            await bot.sendMessage(chatId, "<i><b>Server closed!</b></i>", {
-              parse_mode: "HTML",
-            });
-          } catch (err) {
-            console.error("Error sending message:", err);
-          }
-          resolve();
-        }
-      }, QUERY_TIMEOUT_DURATION_MS);
-    });
-    res.json({ clearTimeout: "clearTimeout" });
-  } catch {
-    console.error("Error updating server status. Data will be outdated!");
-    try {
-      await bot.sendMessage(
-        chatId,
-        "<i><b>Error: Server status - open, but the server itself is closed!</b></i>",
-        { parse_mode: "HTML" }
-      );
-    } catch (err) {
-      console.error("Error sending message:", err);
-    }
-    res.status(500).json({ err: "err" });
   }
 });
 
