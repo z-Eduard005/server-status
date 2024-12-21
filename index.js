@@ -58,7 +58,7 @@ app.post("/set", checkPassword, async (req, res) => {
     fetch(`${URL}/statusoff`, {
       method: "POST",
       headers: { "x-api-password": apiPassword },
-    }).catch(() => {});
+    });
 
     res.json(newStatus);
   } catch (err) {
