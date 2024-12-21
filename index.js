@@ -11,7 +11,7 @@ const apiPassword = process.env.API_PASSWORD || "";
 const allowedIPs = JSON.parse(process.env.ALLOWED_IPS || "[]");
 const URL = "https://timeout-server.vercel.app/";
 
-const bot = new TGBot(tgbToken, { polling: false });
+// const bot = new TGBot(tgbToken, { polling: false });
 
 const app = express();
 app.use(express.json());
@@ -39,26 +39,31 @@ app.post("/check", checkPassword, (req, res) => {
 app.post("/set", checkPassword, async (req, res) => {
   try {
     const newStatus = req.body;
-    try {
-      const serverOn = (await getServerStatusDB()).on;
-      if (!serverOn)
-        bot.sendMessage(
-          chatId,
-          `<i><b>Join in! Server open on IP:</b></i> ${newStatus.ipv4}:25565`,
-          { parse_mode: "HTML" }
-        );
-    } catch (err) {
-      console.error("Error reading server status or sending message:", err);
-    }
+    // try {
+    //   const serverOn = (await getServerStatusDB()).on;
+    //   if (!serverOn)
+    //     bot.sendMessage(
+    //       chatId,
+    //       `<i><b>Join in! Server open on IP:</b></i> ${newStatus.ipv4}:25565`,
+    //       { parse_mode: "HTML" }
+    //     );
+    // } catch (err) {
+    //   console.error("Error reading server status or sending message:", err);
+    // }
     await updateServerStatusDB({
       ...newStatus,
       lastUpdateTime: Date.now(),
     });
 
-    fetch(`${URL}/statusoff`, {
-      method: "POST",
-      headers: { "x-api-password": apiPassword },
-    });
+    try {
+      fetch(`${URL}/statusoff`, {
+        method: "POST",
+        headers: { "x-api-password": apiPassword },
+      }).catch(() => {});
+    } catch (err) {
+      console.error(`Error sending statusoff request: ${err}`);
+    }
+
     res.json(newStatus);
   } catch (err) {
     res.status(500).json({ err: "Error updating server status" });
