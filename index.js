@@ -1,7 +1,6 @@
 import express from "express";
 import TGBot from "node-telegram-bot-api";
 import { getServerStatusDB, updateServerStatusDB } from "./firebase.js";
-import { setTimeout as setTimeoutPromis } from "timers/promises";
 // import dotenv from "dotenv";
 // dotenv.config({ path: ".env.local" });
 
@@ -64,33 +63,38 @@ app.post("/set", checkPassword, async (req, res) => {
       lastUpdateTime: Date.now(),
     });
 
-    const timeoutErr = fetch(`${URL}/clearTimeout`, { method: "POST" });
-    timeoutErr.toString();
+    fetch(`${URL}/statusoff`, { method: "POST" });
     res.json(newStatus);
   } catch (err) {
     res.status(500).json({ err: "Error updating server status" });
   }
 });
 
-app.post("/clearTimeout", async (req, res) => {
+app.post("/statusoff", async (req, res) => {
+  let timeoutPromise = null;
+  let queryTimeout = null;
   try {
-    await setTimeoutPromis(QUERY_TIMEOUT_DURATION_MS);
-
-    const lastUpdateTime = (await getServerStatusDB()).lastUpdateTime;
-    if (Date.now() - lastUpdateTime >= QUERY_TIMEOUT_DURATION_MS) {
-      await updateServerStatusDB({
-        on: false,
-        ipv4: "",
-        lastUpdateTime: Date.now(),
-      });
-      try {
-        await bot.sendMessage(chatId, "<i><b>Server closed!</b></i>", {
-          parse_mode: "HTML",
-        });
-      } catch (err) {
-        console.error("Error sending message:", err);
-      }
-    }
+    timeoutPromise = new Promise((resolve) => {
+      queryTimeout = setTimeout(async () => {
+        const lastUpdateTime = (await getServerStatusDB()).lastUpdateTime;
+        if (Date.now() - lastUpdateTime >= QUERY_TIMEOUT_DURATION_MS) {
+          await updateServerStatusDB({
+            on: false,
+            ipv4: "",
+            lastUpdateTime: Date.now(),
+          });
+          try {
+            await bot.sendMessage(chatId, "<i><b>Server closed!</b></i>", {
+              parse_mode: "HTML",
+            });
+          } catch (err) {
+            console.error("Error sending message:", err);
+          }
+          resolve();
+        }
+      }, QUERY_TIMEOUT_DURATION_MS);
+    });
+    await timeoutPromise;
     res.json({ clearTimeout: "clearTimeout" });
   } catch {
     console.error("Error updating server status. Data will be outdated!");
