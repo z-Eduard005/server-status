@@ -55,14 +55,10 @@ app.post("/set", checkPassword, async (req, res) => {
       lastUpdateTime: Date.now(),
     });
 
-    try {
-      fetch(`${URL}/statusoff`, {
-        method: "POST",
-        headers: { "x-api-password": apiPassword },
-      }).catch(() => {});
-    } catch (err) {
-      console.log(`Error sending statusoff request: ${err}`);
-    }
+    fetch(`${URL}/statusoff`, {
+      method: "POST",
+      headers: { "x-api-password": apiPassword },
+    }).catch(() => {});
 
     res.json(newStatus);
   } catch (err) {
