@@ -3,8 +3,6 @@ import TGBot from "node-telegram-bot-api";
 import { waitUntil } from "@vercel/functions";
 import { setTimeout as setTimeoutPromis } from "timers/promises";
 import { getServerStatusDB, updateServerStatusDB } from "./firebase.js";
-// import dotenv from "dotenv";
-// dotenv.config({ path: ".env.local" });
 
 const port = process.env.PORT || 3000;
 const tgbToken = process.env.TELEGRAM_BOT_TOKEN || "";
@@ -20,40 +18,37 @@ app.use(express.json());
 
 const checkPassword = (req, res, next) => {
   if (req.headers["x-api-password"] === apiPassword) return next();
-  return res.status(403).json({ error: "Access denied" });
+  return res.status(403).json({ err: "Access denied!" });
 };
 
-app.get("/get", checkPassword, async (req, res) => {
+app.post("/check", checkPassword, async (req, res) => {
   try {
-    const { on, ipv4 } = await getServerStatusDB();
-    res.json({ on, ipv4 });
+    const ipv4DB = await getServerStatusDB();
+    const ipv4 = req.body;
+    const ok = allowedIPs.some((pc) => pc.ip === ipv4);
+    if (!ok) res.status(403).json({ err: "You are not allowed to play!" });
+    res.json(ipv4DB);
   } catch (err) {
     res.status(500).json({ err: "Error reading server status" });
   }
 });
 
-app.post("/check", checkPassword, (req, res) => {
-  const { ipv4 } = req.body;
-  const ok = allowedIPs.some((pc) => pc.ip === ipv4);
-  res.json({ ok });
-});
-
 app.post("/set", checkPassword, async (req, res) => {
   try {
-    const newStatus = req.body;
+    const ipv4 = req.body;
     try {
-      const serverOn = (await getServerStatusDB()).on;
+      const serverOn = (await getServerStatusDB()).ipv4;
       if (!serverOn)
         bot.sendMessage(
           chatId,
-          `<i><b>Join in! Server open on IP:</b></i> ${newStatus.ipv4}:25565`,
+          `<i><b>Join in! Server open on IP:</b></i> ${ipv4}:25565`,
           { parse_mode: "HTML" }
         );
     } catch (err) {
       console.error("Error reading server status or sending message:", err);
     }
     await updateServerStatusDB({
-      ...newStatus,
+      ipv4,
       lastUpdateTime: Date.now(),
     });
 
@@ -65,7 +60,6 @@ app.post("/set", checkPassword, async (req, res) => {
           const lastUpdateTime = (await getServerStatusDB()).lastUpdateTime;
           if (Date.now() - lastUpdateTime >= QUERY_TIMEOUT_DURATION_MS) {
             await updateServerStatusDB({
-              on: false,
               ipv4: "",
               lastUpdateTime: Date.now(),
             });
@@ -92,7 +86,7 @@ app.post("/set", checkPassword, async (req, res) => {
       })()
     );
 
-    res.json(newStatus);
+    res.json(ipv4);
   } catch (err) {
     res.status(500).json({ err: "Error updating server status" });
   }
