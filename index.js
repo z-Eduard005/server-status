@@ -23,7 +23,7 @@ const checkPassword = (req, res, next) => {
 
 app.post("/check", checkPassword, async (req, res) => {
   try {
-    const ipv4DB = await getServerStatusDB();
+    const ipv4DB = (await getServerStatusDB()).ipv4;
     const { ipv4 } = req.body;
     const ok = allowedIPs.some((pc) => pc.ip === ipv4);
     if (!ok) res.status(403).json({ err: "You are not allowed to play!" });
