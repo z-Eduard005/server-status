@@ -35,7 +35,7 @@ app.post("/check", checkPassword, async (req, res) => {
 
 app.post("/set", checkPassword, async (req, res) => {
   try {
-    const ipv4 = req.body;
+    const { ipv4 } = req.body;
     try {
       const serverOn = (await getServerStatusDB()).ipv4;
       if (!serverOn)
