@@ -27,7 +27,7 @@ app.post("/check", checkPassword, async (req, res) => {
     const { ipv4 } = req.body;
     const ok = allowedIPs.some((pc) => pc.ip === ipv4);
     if (!ok) res.status(403).json({ err: "You are not allowed to play!" });
-    res.json(ipv4DB);
+    res.json({ ip: ipv4DB, allowedIPs: allowedIPs.map((pc) => pc.ip) });
   } catch (err) {
     res.status(500).json({ err: "Error reading server status" });
   }
